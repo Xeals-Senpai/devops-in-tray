@@ -1,0 +1,13 @@
+- name: Configure Docker container
+  hosts: web
+  become: false
+  tasks:
+    - name: Run apt-get update inside the container
+      community.docker.docker_container_exec:
+        container: web-container
+        command: apt-get update
+
+    - name: Install curl inside the container
+      community.docker.docker_container_exec:
+        container: web-container
+        command: apt-get install -y curl

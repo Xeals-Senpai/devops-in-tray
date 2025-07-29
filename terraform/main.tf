@@ -17,7 +17,7 @@ resource "docker_image" "web" {
 }
 resource "docker_container" "web" {
   name  = "web-container"
-  image = docker_image.web.latest
+  image = docker_image.web.name
   ports {
     internal = 5000
     external = 5000
