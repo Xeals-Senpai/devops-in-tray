@@ -1,11 +1,11 @@
 terraform {
-    required_providers {
-        docker= {
-            source= "kreuzwerker/docker"
-            version= "~> 3.0"
-        }
+  required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "~> 3.0"
     }
-    backend "local" {}
+  }
+  backend "local" {}
 }
 provider "docker" {}
 resource "docker_image" "web" {
