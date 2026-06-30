@@ -2,6 +2,8 @@
 
 ## Overview
 
+[![CI Pipeline](https://github.com/Xeals-Senpai/devops-in-tray/actions/workflows/ci.yml/badge.svg)](https://github.com/Xeals-Senpai/devops-in-tray/actions/workflows/ci.yml)
+
 This project is part of a DevOps in-tray exercise, designed to:
 
 - **Provision infrastructure** using Terraform and configure it with Ansible
