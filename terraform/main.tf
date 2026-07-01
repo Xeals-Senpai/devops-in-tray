@@ -12,7 +12,7 @@ resource "docker_container" "web" {
   image = docker_image.web.name
 
   ports {
-    internal = 5000
-    external = 5000
+    internal = 5050
+    external = 5050
   }
 }
