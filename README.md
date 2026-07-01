@@ -1,190 +1,270 @@
-# DevOps In-Tray Exercise: Infrastructure, Monitoring & Issue Simulation
+# platforms-lab
+
+[![CI Pipeline](https://github.com/Xeals-Senpai/platforms-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Xeals-Senpai/platforms-lab/actions/workflows/ci.yml)
+
+Personal Platform Engineering and DevOps learning environment.
 
 ## Overview
 
-[![CI Pipeline](https://github.com/Xeals-Senpai/devops-in-tray/actions/workflows/ci.yml/badge.svg)](https://github.com/Xeals-Senpai/devops-in-tray/actions/workflows/ci.yml)
+Platforms Lab is a local infrastructure playground used to learn, experiment with, and demonstrate modern DevOps and Platform Engineering concepts using Infrastructure as Code, monitoring, observability, and automation tools.
 
-This project is part of a DevOps in-tray exercise, designed to:
+The project is intentionally built using local Docker infrastructure to provide a safe and cost-effective environment for testing and troubleshooting without requiring cloud resources.
 
-- **Provision infrastructure** using Terraform and configure it with Ansible
-- **Deploy a Flask web application** in Docker
-- **Monitor it with Prometheus**
-- **Simulate issues** and troubleshoot them like a DevOps engineer
+Current technologies include:
 
-This README provides a beginner-friendly walkthrough and documents all challenges and resolutions throughout the tasks.
+- Terraform
+- Docker
+- Prometheus
+- Grafana
+- Flask
+- GitHub Actions
+- Ansible (work in progress)
 
----
-
-## Task 1: Infrastructure Review
-
-### Objective
-
-Review existing infrastructure and understand how services are provisioned and configured.
-
-### Challenges Encountered
-
-- **Cloud services can be expensive:** Had to provision infrastructure locally using Terraform's local backend to save cost
-- **Docker setup on Windows:** Posed path-related and permission issues
-
-### Actions Taken
-
-- Chose to use Terraform with the Docker provider to create containers
-- Installed Terraform and Docker CLI on Windows
-- Used PowerShell to manage local infrastructure
-- Created a custom Docker bridge network (`web`) to allow inter-container communication
+The repository serves as a long-term learning platform where new technologies and operational scenarios can be added and explored over time.
 
 ---
 
-## Task 2: Infrastructure Setup (Terraform + Ansible)
+## Current Architecture
 
-### Infrastructure Tools Used
+```text
+platforms-lab-network
+│
+├── web-container
+│   ├── Flask Application
+│   └── Prometheus Metrics Endpoint
+│
+├── prometheus
+│   └── Scrapes Application and Host Metrics
+│
+└── grafana
+    └── Visualises Metrics and Dashboards
 
-- **Terraform:** Provision Docker containers
-- **Ansible:** Run configuration tasks inside containers
-
-### Challenges Encountered
-
-- **Terraform error:** `unsupported attribute` regarding `docker_container web` and `latest`
-    - **Cause:** Incorrect syntax accessing container image tags
-    - **Fix:** Used explicit image names in Terraform
-- **Ansible errors:** `permission denied`, `externally-managed-environment`, and container paused
-    - **Cause:** Running Ansible against a non-running or misconfigured container
-    - **Fix:** Ensured Docker was running, permissions were granted, and container was alive before playbook execution
-- **pip install errors inside PowerShell**
-    - **Cause:** Python not properly installed or virtual environment not activated
-    - **Fix:** Installed Python manually, then created and activated a virtualenv
-
-### Actions Taken
-
-Wrote Ansible playbook to:
-
-- Run `apt-get update`
-- Install dependencies like `curl`
-- Used `community.docker.docker_container` Ansible module
-- Ensured Python, pip, Docker, and Terraform were working together on Windows
-
----
-
-## Task 3: Service Deployment (Flask + Prometheus)
-
-### Architecture
-
-- **Flask App container:** `web-container`
-- **Prometheus container:** `prometheus`
-- **Docker network:** `web`
-
-### Challenges Encountered
-
-- **Prometheus connection refused to `host.docker.internal:5050`**
-    - **Cause:** Docker network isolation
-    - **Fix:** Ran both containers on the same Docker network (`web`) and changed Prometheus target to `web-container:5050`
-- **Prometheus 404 or empty targets**
-    - **Cause:** Port mismatch or wrong target
-    - **Fix:** Aligned Flask app to use port 5050, and confirmed `/metrics` endpoint works
-
-### Actions Taken
-
-- Created `prometheus.yml` configuration
-- Mounted it as a volume in the Prometheus container
-- Verified target via Prometheus UI → **Status → Targets**
-
----
-
-## Task 4: Issue Simulation and Troubleshooting
-
-To simulate real-world issues, dedicated routes were added to the Flask app. These routes simulate specific problems only when they are accessed, keeping the application stable under normal use.
-
-### 1. Simulated Slow Response
-
-- **Route:** `/slow`
-- **Behavior:** Adds `time.sleep(10)` to delay the response
-- **Troubleshoot:** Notice the delay in browser or through Prometheus metrics
-
-### 2. Simulated Random Failures
-
-- **Route:** `/random`
-- **Behavior:** Has a 50% chance of raising an exception to simulate failure
-- **Troubleshoot:** Watch for errors in `docker logs web-container` or failure metrics in Prometheus
-
-### 3. Simulated High CPU Load
-
-- **Route:** `/load`
-- **Behavior:** Performs a computationally heavy loop using `sum(range(10**7))`
-- **Troubleshoot:** Monitor CPU usage via `docker stats` or increased request latency
-
-### 4. Simulated Container Crash
-
-- **Route:** `/crash`
-- **Behavior:** Uses `os._exit(1)` to immediately kill the container
-- **Troubleshoot:** Container disappears from `docker ps`, Prometheus marks it as DOWN
-
----
-
-## Testing
-
-Use browser or `curl`:
-
-```sh
-curl http://localhost:5050/slow
-curl http://localhost:5050/random
-curl http://localhost:5050/load
-curl http://localhost:5050/crash
+Host Machine
+│
+└── Windows Exporter
+    └── Exposes System Metrics
 ```
 
 ---
 
-## How to Run Everything
+## Components
 
-### Build Flask App
+### Terraform
 
-```sh
-cd app
-docker build -t flask-app .
-```
+Terraform manages all infrastructure resources, including:
 
-### Create Docker Network
+- Docker network creation
+- Flask application container deployment
+- Prometheus container deployment
+- Grafana container deployment
 
-```sh
-docker network create web
-```
+Terraform is used as the primary Infrastructure as Code tool for the project.
 
-### Run Flask App
+### Flask Application
 
-```sh
-docker run -d --name web-container --network web -p 5050:5050 flask-app
-```
+The sample Flask application provides a basic web service and exposes Prometheus metrics.
 
-### Run Prometheus
+Available routes:
 
-```sh
-docker run -d --name prometheus --network web -p 9090:9090 \
-    -v "C:/path/to/prometheus.yml:/etc/prometheus/prometheus.yml" \
-    prom/prometheus
-```
+| Route | Purpose |
+|---------|---------|
+| `/` | Basic application response |
+| `/metrics` | Prometheus metrics endpoint |
+| `/slow` | Simulates a slow response |
+| `/random` | Simulates random failures |
+| `/load` | Simulates high CPU load |
+| `/crash` | Simulates an application crash |
 
-### Visit
+These routes are used to create realistic troubleshooting and monitoring scenarios.
 
-- **Flask App:** [http://localhost:5050](http://localhost:5050)
-- **Prometheus:** [http://localhost:9090](http://localhost:9090)
+### Prometheus
+
+Prometheus collects metrics from:
+
+- Flask application
+- Windows Exporter
+
+Metrics can be inspected directly through the Prometheus UI.
+
+### Grafana
+
+Grafana provides visualisation and dashboarding for collected metrics.
+
+Configuration is provisioned automatically through:
+
+- Datasources as code
+- Dashboards as code
+
+No manual dashboard creation is required after deployment.
+
+### Ansible
+
+Ansible configuration is included as part of the project and will be expanded in future iterations to automate system configuration and deployment tasks.
 
 ---
 
-## Cleanup
+## Repository Structure
 
-```sh
-docker stop web-container prometheus
-docker rm web-container prometheus
+```text
+platforms-lab/
+│
+├── .github/
+│   └── workflows/
+│
+├── ansible/
+│   ├── inventory.ini
+│   └── playbook.yml
+│
+├── app/
+│   ├── app.py
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+├── grafana/
+│   ├── dashboards/
+│   └── provisioning/
+│
+├── prometheus/
+│   └── prometheus.yml
+│
+├── scripts/
+│
+├── terraform/
+│   ├── versions.tf
+│   ├── providers.tf
+│   ├── main.tf
+│   ├── outputs.tf
+│   └── variables.tf
+│
+└── README.md
 ```
 
 ---
 
-## Conclusion
+## Monitoring Stack
 
-This exercise covered infrastructure-as-code, service monitoring, and real-world issue simulation — all on a local environment using beginner-friendly tools.
+### Prometheus Targets
 
-With this setup, the following DevOps principles were demonstrated:
+Current scrape targets:
 
-- **Toolchain knowledge:** Terraform, Ansible, Docker
-- **Troubleshooting and root cause analysis**
-- **System monitoring with Prometheus**
-- **Clean, reproducible project documentation**
+- Flask application (`web-container`)
+- Windows Exporter (`host.docker.internal:9182`)
+
+### Grafana Dashboards
+
+Current dashboards:
+
+- Windows Infrastructure Dashboard
+
+Future dashboards:
+
+- Application Metrics Dashboard
+- Alerting Dashboard
+- Container Monitoring Dashboard
+
+---
+
+## Deployment
+
+### Terraform
+
+Initialise Terraform:
+
+```bash
+cd terraform
+terraform init
+```
+
+Validate configuration:
+
+```bash
+terraform validate
+```
+
+Review changes:
+
+```bash
+terraform plan
+```
+
+Deploy infrastructure:
+
+```bash
+terraform apply
+```
+
+---
+
+## Accessing Services
+
+### Flask Application
+
+```text
+http://localhost:5050
+```
+
+### Prometheus
+
+```text
+http://localhost:9090
+```
+
+### Grafana
+
+```text
+http://localhost:3000
+```
+
+Default Grafana credentials:
+
+```text
+Username: admin
+Password: admin
+```
+
+---
+
+## Learning Objectives
+
+This repository is used to explore:
+
+- Infrastructure as Code
+- Docker Networking
+- Monitoring and Observability
+- Grafana Provisioning
+- Prometheus Configuration
+- CI Validation
+- Failure Simulation
+- Troubleshooting and Root Cause Analysis
+- Platform Engineering Concepts
+- Configuration Management
+
+---
+
+## Current Status
+
+Implemented:
+
+- Terraform-managed infrastructure
+- Docker networking
+- Flask application deployment
+- Prometheus monitoring
+- Grafana provisioning
+- Dashboard provisioning
+- GitHub Actions validation
+
+Planned:
+
+- Application-specific metrics
+- Custom Grafana dashboards
+- Alerting rules
+- Grafana persistence
+- Expanded Ansible automation
+- CI/CD enhancements
+- Additional platform engineering scenarios
+
+---
+
+## Purpose
+
+Platforms Lab is intended to be a practical, hands-on environment for learning and demonstrating DevOps, Infrastructure, Monitoring, and Platform Engineering skills through reproducible, code-driven infrastructure.
