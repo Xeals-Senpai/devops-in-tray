@@ -12,3 +12,13 @@ output "web_image_name" {
   description = "Name of the web application Docker image."
   value       = docker_image.web.name
 }
+
+output "prometheus_container_name" {
+  description = "Prometheus container name"
+  value       = docker_container.prometheus.name
+}
+
+output "grafana_container_name" {
+  description = "Grafana container name"
+  value       = docker_container.grafana.name
+}
